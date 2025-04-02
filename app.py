@@ -1,10 +1,23 @@
 import io
 import pandas as pd
 import requests
-from flask import Flask, request, send_file, render_template, jsonify
+from flask import Flask, request, send_file, render_template,session,jsonify,redirect,url_for
 from datetime import datetime
+import os
+from pymongo import MongoClient
+import certifi
+from werkzeug.security import check_password_hash
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY")
+
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI,tlsCAFile = certifi.where())
+db = client["KeywordSearch"]
+collection = db["users"]
 
 ALLOWED_EXTENSIONS = {'xlsx'}
 
@@ -40,7 +53,37 @@ def search_site_rank(query, site_url, serp_api_key, num_results=100):
     return None, None
 
 @app.route('/')
+def login():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def authenticate():
+    data= request.json
+    email = data.get("email")
+    password = data.get("password")
+    
+    if not email or not password:
+        return jsonify({"error": "Username and password are required."}), 400
+
+    user = collection.find_one({"email":email })
+  
+    if user and check_password_hash(user["password"], password):
+        session["user"] = email  
+        return jsonify({"message": "Login successful", "redirect": url_for("upload_file")}), 200
+    else:
+        print("error")
+        return jsonify({"error": "Invalid username or password"}), 401
+
+@app.route('/logout')
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("login"))
+
+
+@app.route('/upload')
 def upload_file():
+    if "user" not in session:
+        return redirect(url_for("login"))
     return render_template('upload.html')
 
 @app.route('/process', methods=['POST'])

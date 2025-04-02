@@ -8,27 +8,30 @@
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
     />
-
     <script
       src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs"
       type="module"
     ></script>
-
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <style>
       .fade-in {
         animation: fadeIn 1s ease-in-out;
       }
       @keyframes fadeIn {
-        0% {
+        from {
           opacity: 0;
         }
-        100% {
+        to {
           opacity: 1;
         }
       }
-
       #loader,
-      #downloadModal {
+      #downloadModal,
+      #confirmModal {
         position: fixed;
         inset: 0;
         display: none;
@@ -37,20 +40,32 @@
         background-color: rgba(0, 0, 0, 0.6);
         z-index: 9999;
       }
-
-      #downloadModal.show {
+      .modal.show {
         display: flex !important;
       }
     </style>
   </head>
   <body
-    class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex items-center justify-center"
+    class="bg-gray-100 min-h-screen flex flex-col items-center justify-center"
   >
-    <div class="max-w-lg w-full p-8 bg-white rounded-xl shadow-lg fade-in">
-      <h2 class="text-3xl font-semibold text-center mb-6 text-gray-800">
+    <!-- Navbar -->
+    <nav
+      class="fixed top-0 left-0 w-full bg-white shadow-md py-4 px-6 flex justify-between items-center z-50"
+    >
+      <h1 class="text-xl font-semibold text-gray-800">Keyword Search Tool</h1>
+      <button
+        id="logoutBtn"
+        class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600"
+      >
+        Logout
+      </button>
+    </nav>
+
+    <!-- Main Form -->
+    <div class="max-w-lg w-full p-8 bg-white rounded-xl shadow-lg fade-in mt-8">
+      <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">
         Keyword Search
       </h2>
-
       <form id="uploadForm" class="space-y-6">
         <div>
           <label for="apiKey" class="block text-gray-700 font-medium"
@@ -60,11 +75,10 @@
             type="text"
             id="apiKey"
             name="apiKey"
-            class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 transition duration-300"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
             required
           />
         </div>
-
         <div>
           <label for="siteUrl" class="block text-gray-700 font-medium"
             >Site URL</label
@@ -73,11 +87,10 @@
             type="url"
             id="siteUrl"
             name="siteUrl"
-            class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 transition duration-300"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
             required
           />
         </div>
-
         <div>
           <label for="file" class="block text-gray-700 font-medium"
             >Upload Excel File</label
@@ -87,15 +100,14 @@
             id="file"
             name="file"
             accept=".xlsx"
-            class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 transition duration-300"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
             required
           />
         </div>
-
         <div class="flex justify-center">
           <button
             type="submit"
-            class="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition duration-300 transform hover:scale-105"
+            class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
           >
             Upload and Process
           </button>
@@ -103,10 +115,8 @@
       </form>
     </div>
 
-    <div
-      id="confirmModal"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden"
-    >
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal hidden">
       <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-sm">
         <h2 class="text-xl font-semibold mb-4">Confirm Action</h2>
         <p class="text-gray-700">Are you sure you want to search keywords?</p>
@@ -127,7 +137,8 @@
       </div>
     </div>
 
-    <div id="loader">
+    <!-- Loader -->
+    <div id="loader" class="modal">
       <dotlottie-player
         src="https://lottie.host/33b2ae36-6170-444c-9567-138bbb0c0dd0/xObqSjZRWI.lottie"
         background="transparent"
@@ -137,13 +148,11 @@
       ></dotlottie-player>
     </div>
 
-    <div
-      id="downloadModal"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden"
-    >
+    <!-- Download Modal -->
+    <div id="downloadModal" class="modal hidden">
       <div class="bg-white p-6 rounded-lg shadow-lg text-center max-w-sm">
         <h2 class="text-xl font-semibold mb-4">Download Ready</h2>
-        <p class="text-gray-700">Your processed file is ready to download.</p>
+        <p class="text-gray-700">Your processed file is ready.</p>
         <div class="mt-4">
           <a
             id="downloadLink"
@@ -161,92 +170,70 @@
     </div>
 
     <script>
+      const showToast = (message, type = "success") => {
+        Toastify({
+          text: message,
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: type === "success" ? "green" : "red",
+        }).showToast()
+      }
+
       document
         .getElementById("uploadForm")
-        .addEventListener("submit", function (event) {
+        .addEventListener("submit", (event) => {
           event.preventDefault()
-          document.getElementById("confirmModal").classList.remove("hidden")
+          document.getElementById("confirmModal").classList.add("show")
         })
 
-      document
-        .getElementById("confirmNo")
-        .addEventListener("click", function () {
-          document.getElementById("confirmModal").classList.add("hidden")
-        })
+      document.getElementById("confirmNo").addEventListener("click", () => {
+        document.getElementById("confirmModal").classList.remove("show")
+      })
 
-      document
-        .getElementById("confirmYes")
-        .addEventListener("click", function () {
-          document.getElementById("confirmModal").classList.add("hidden")
+      document.getElementById("confirmYes").addEventListener("click", () => {
+        document.getElementById("confirmModal").classList.remove("show")
+        document.getElementById("loader").classList.add("show")
 
-          let formData = new FormData(document.getElementById("uploadForm"))
-          let loader = document.getElementById("loader")
-          loader.style.display = "flex"
+        let formData = new FormData(document.getElementById("uploadForm"))
 
-          fetch("/process", {
-            method: "POST",
-            body: formData,
-          })
-            .then((response) => {
-              loader.style.display = "none"
-              if (!response.ok) {
-                return response.json().then((data) => {
-                  alert(data.error || "Something went wrong")
-                })
-              }
-              return response.blob()
-            })
-            .then((blob) => {
-              if (!blob) return
+        fetch("/process", { method: "POST", body: formData })
+          .then((response) => {
+            document.getElementById("loader").classList.remove("show")
 
-              let now = new Date()
-              let timestamp =
-                now.getFullYear() +
-                "-" +
-                String(now.getMonth() + 1).padStart(2, "0") +
-                "-" +
-                String(now.getDate()).padStart(2, "0") +
-                "_" +
-                String(now.getHours()).padStart(2, "0") +
-                "-" +
-                String(now.getMinutes()).padStart(2, "0") +
-                "-" +
-                String(now.getSeconds()).padStart(2, "0")
-
-              let fileName = `processed_results_${timestamp}.xlsx`
-
-              let url = window.URL.createObjectURL(blob)
-              let downloadLink = document.getElementById("downloadLink")
-              let closeModalBtn = document.getElementById("closeModal")
-
-              downloadLink.href = url
-              downloadLink.download = fileName
-
-              let modal = document.getElementById("downloadModal")
-              modal.style.display = "flex"
-              modal.classList.add("show")
-
-              closeModalBtn.style.display = "none"
-
-              downloadLink.addEventListener("click", function () {
-                setTimeout(() => {
-                  closeModalBtn.style.display = "inline-block"
-                }, 500)
+            if (!response.ok) {
+              return response.json().then((data) => {
+                showToast(data.error || "Something went wrong", "error")
               })
-            })
-            .catch((error) => {
-              loader.style.display = "none"
-              alert("An error occurred while processing the file.")
-            })
-        })
+            }
+            return response.blob()
+          })
+          .then((blob) => {
+            if (!blob) return
 
-      document
-        .getElementById("closeModal")
-        .addEventListener("click", function () {
-          let modal = document.getElementById("downloadModal")
-          modal.classList.remove("show")
-          modal.style.display = "none"
-        })
+            let url = URL.createObjectURL(blob)
+            let downloadLink = document.getElementById("downloadLink")
+
+            downloadLink.href = url
+            downloadLink.download = `processed_results_${new Date()
+              .toISOString()
+              .replace(/[:.]/g, "-")}.xlsx`
+
+            document.getElementById("downloadModal").classList.add("show")
+          })
+          .catch(() => {
+            document.getElementById("loader").classList.remove("show")
+            showToast("An error occurred while processing the file.", "error")
+          })
+      })
+
+      document.getElementById("closeModal").addEventListener("click", () => {
+        document.getElementById("downloadModal").classList.remove("show")
+      })
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        window.location.href = "/logout"
+      })
     </script>
   </body>
 </html>

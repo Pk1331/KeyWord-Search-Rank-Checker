@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <!-- Toastify CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  </head>
+  <body class="h-screen w-screen flex">
+    <!-- Left Section (Image) -->
+    <div class="w-1/2 h-full bg-yellow-400 flex items-center justify-center">
+      <img
+        src="{{ url_for('static', filename='images/login.png') }}"
+        alt="Login Image"
+        class="h-3/4 object-contain rounded-lg"
+      />
+    </div>
+
+    <!-- Right Section (Login Form) -->
+    <div class="w-1/2 h-full flex flex-col justify-center px-24 bg-white">
+      <div class="flex flex-col items-center justify-center gap-3 mb-6">
+        <img
+          src="{{ url_for('static', filename='images/logo.png') }}"
+          alt="Company Logo"
+          class="h-12 w-auto"
+        />
+        <h2 class="text-2xl font-bold text-gray-800">SERP Rank Tracker</h2>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="w-full">
+        <div class="mb-4">
+          <label class="block text-gray-700 font-medium mb-1"
+            >Email Address</label
+          >
+          <input
+            type="email"
+            id="email"
+            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-blue-500"
+            placeholder="your-email@gmail.com"
+            required
+          />
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-700 font-medium mb-1">Password</label>
+          <div class="relative">
+            <input
+              type="password"
+              id="password"
+              class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-blue-500 pr-10"
+              placeholder="Please enter your password"
+              required
+            />
+            <span
+              id="toggleIcon"
+              class="absolute inset-y-0 right-3 flex items-center text-gray-500 cursor-pointer"
+              onclick="togglePassword()"
+            >
+              <i id="eyeIcon" class="fas fa-eye-slash"></i>
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-900 transition flex items-center justify-center"
+        >
+          Log In
+        </button>
+      </form>
+
+      <button
+        id="logoutButton"
+        class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition flex items-center justify-center hidden"
+        onclick="logout()"
+      >
+        Logout
+      </button>
+    </div>
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault()
+          let email = document.getElementById("email").value
+          let password = document.getElementById("password").value
+
+          fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.redirect) {
+                showToast("Login Successful!", "green")
+
+                setTimeout(() => {
+                  window.location.href = data.redirect
+                }, 2000)
+              } else {
+                showToast(data.error || "Login Failed!", "red")
+              }
+            })
+            .catch((error) => {
+              console.error("Login error:", error)
+              showToast("Something went wrong!", "red")
+            })
+        })
+
+      function logout() {
+        localStorage.removeItem("token")
+        showToast("Logged out successfully!", "blue")
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      }
+
+      function togglePassword() {
+        let passwordInput = document.getElementById("password")
+        let eyeIcon = document.getElementById("eyeIcon")
+
+        passwordInput.type =
+          passwordInput.type === "password" ? "text" : "password"
+        eyeIcon.classList.toggle("fa-eye")
+        eyeIcon.classList.toggle("fa-eye-slash")
+      }
+
+      function showToast(message, color) {
+        Toastify({
+          text: message,
+          duration: 3000,
+          close: true,
+          gravity: "top",
+          position: "right",
+          backgroundColor: color,
+        }).showToast()
+      }
+    </script>
+  </body>
+</html>
