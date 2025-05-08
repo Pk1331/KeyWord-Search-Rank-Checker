@@ -126,8 +126,6 @@ def process_file():
 
         original_filename = secure_filename(file.filename) or "uploaded_file.xlsx"
         name, ext = os.path.splitext(original_filename)
-        print(f"Original filename: {original_filename}")
-        print(f"Name: {name}, Extension: {ext}")
         if not name:
             name = "result"
         if not ext:
@@ -138,9 +136,7 @@ def process_file():
         result_file.seek(0)
 
         download_name = f"{name}_{current_datetime}{ext}"
-        print(f"Download name: {download_name}")
-
-
+        
         return send_file(result_file, as_attachment=True, download_name=download_name,
                          mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
