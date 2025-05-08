@@ -9,6 +9,7 @@ import certifi
 from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -123,12 +124,23 @@ def process_file():
 
         result_df = pd.DataFrame(result_list)
 
+        original_filename = secure_filename(file.filename) or "uploaded_file.xlsx"
+        name, ext = os.path.splitext(original_filename)
+        print(f"Original filename: {original_filename}")
+        print(f"Name: {name}, Extension: {ext}")
+        if not name:
+            name = "result"
+        if not ext:
+            ext = ".xlsx"
         current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
         result_file = io.BytesIO()
         result_df.to_excel(result_file, index=False)
         result_file.seek(0)
 
-        download_name = f"processed_results_{current_datetime}.xlsx"
+        download_name = f"{name}_{current_datetime}{ext}"
+        print(f"Download name: {download_name}")
+
+
         return send_file(result_file, as_attachment=True, download_name=download_name,
                          mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 

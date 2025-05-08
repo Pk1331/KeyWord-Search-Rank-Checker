@@ -206,19 +206,26 @@
                 showToast(data.error || "Something went wrong", "error")
               })
             }
-            return response.blob()
-          })
-          .then((blob) => {
-            if (!blob) return
 
-            let url = URL.createObjectURL(blob)
-            let downloadLink = document.getElementById("downloadLink")
+            const disposition = response.headers.get("Content-Disposition")
+            const filenameMatch =
+              disposition &&
+              disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+            const filename = filenameMatch
+              ? filenameMatch[1].replace(/['"]/g, "")
+              : "download.xlsx"
+
+            return response.blob().then((blob) => ({ blob, filename }))
+          })
+          .then((data) => {
+            if (!data) return
+
+            const { blob, filename } = data
+            const url = URL.createObjectURL(blob)
+            const downloadLink = document.getElementById("downloadLink")
 
             downloadLink.href = url
-            downloadLink.download = `Nautilus_${new Date()
-              .toISOString()
-              .replace(/[:.]/g, "-")}.xlsx`
-
+            downloadLink.download = filename
             document.getElementById("downloadModal").classList.add("show")
           })
           .catch(() => {
