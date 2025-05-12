@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>File Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='images/cloud.svg') }}"
+      type="image/x-icon"
+    />
+
+    <!-- External CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='CSS/Results/styles.css') }}"
+    />
+
+    <!-- Icons CDN -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <h2><span>&#9729; </span>Cloud File Manager</h2>
+    <div class="breadcrumb" id="breadcrumb"></div>
+
+    <div id="content" class="loading-text">
+      Loading<span class="dot1">.</span><span class="dot2">.</span
+      ><span class="dot3">.</span>
+    </div>
+
+    <script src="{{ url_for('static', filename='JS/Results/script.js') }}"></script>
+    
+    <div class="button-container">
+      <button onclick="window.history.back();" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Upload
+      </button>
+    </div>
+  </body>
+</html>
